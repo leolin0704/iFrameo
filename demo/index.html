@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>父页面</title>
+    <meta charset="UTF-8">
+    <link rel="styleSheet" type="text/css" href="../css/jquery.rollingBorder.css">
+    <style type="text/css">
+        #block {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 300px;
+            height: 300px;
+            background-color: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <iframe id="frame1"></iframe>
+    <iframe id="frame2"></iframe>
+
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="../js/jquery.iFrameo.js"></script>
+    <script type="text/javascript">
+        $(function() {
+            var iFrameManager = new iFrameo();
+            iFrameManager.register("frame1", "frame1.html")
+            iFrameManager.register("frame2", "frame2.html")
+
+            iFrameManager.load(["frame1", "frame2"], function(frame) {
+
+            }, function() {
+                iFrameManager.catch(["frame1", "frame2"], function(frames) {
+                    $("button", frames.frame1.iDocument).click(function() {
+                        alert($(this).html())
+                    })
+                })
+            })
+
+            iFrameManager.receive("test", function(params, item) {
+                console.log(item, params)
+            })
+
+        })
+    </script>
+</body>
+
+</html>
