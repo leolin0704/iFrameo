@@ -4,7 +4,6 @@
 <head>
     <title>父页面</title>
     <meta charset="UTF-8">
-    <link rel="styleSheet" type="text/css" href="../css/jquery.rollingBorder.css">
     <style type="text/css">
         #block {
             position: absolute;
@@ -20,7 +19,7 @@
 <body>
     <iframe id="frame1"></iframe>
     <iframe id="frame2"></iframe>
-
+    <button>广播</button>
     <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
     <script src="../js/jquery.iFrameo.js"></script>
     <script type="text/javascript">
@@ -39,8 +38,28 @@
                 })
             })
 
-            iFrameManager.receive("test", function(params, item) {
-                console.log(item, params)
+
+
+            $("button").click(function() {
+                iFrameManager.broadcast("kneel", {
+                    "test": 1
+                }, "frame1")
+
+                iFrameManager.broadcast("kneel", {
+                    "test": 2
+                }, "frame2")
+
+
+                iFrameManager.register("frame1", "frame2.html")
+
+                iFrameManager.load("frame1", function(frame) {
+
+                })
+            })
+
+
+            iFrameManager.listen("test", function(params, iframe) {
+                console.log(iframe, params)
             })
 
         })

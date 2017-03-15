@@ -3,7 +3,6 @@
 
 <head>
     <meta charset="UTF-8">
-    <link rel="styleSheet" type="text/css" href="../css/jquery.rollingBorder.css">
     <style type="text/css">
         #block {
             position: absolute;
@@ -32,6 +31,14 @@
             });
 
             $("#cancel").click(function() {});
+
+            window.receivers = {}
+
+            window.receivers.kneel = function(params) {
+                alert("iframe2" + params.test)
+                alert("Kneeled")
+
+            }
         });
     </script>
 </body>

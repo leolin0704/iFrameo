@@ -4,6 +4,15 @@
         var iframeConfigs = []
 
         this.register = function(id, src) {
+
+            iframeConfigs.forEach(function(cfg, index) {
+                if (cfg.id === id) {
+                    $("#" + cfg.id).removeAttr("src")
+                    iframeConfigs.splice(index, 1)
+                    return false
+                }
+            }, this);
+
             iframeConfigs.push({
                 id: id,
                 src: src,
@@ -26,14 +35,21 @@
                     return
                 }
 
+                var $current = $("#" + cfg.id)
+                $current.attr("src", cfg.src)
                 if (loadCallback) {
-                    $("#" + cfg.id).load(function() {
+                    $current.load(function() {
                         cfg.status = 'Y'
                         var me = this
                         var iframeItem = _buildIFrameItem(cfg.id)
-                        iframeItem.iWindow.broadcast = function(name, params) {
-                            broadcast.call(me, name, params, iframeItem)
+                        iframeItem.iWindow.receive = function(name, params) {
+                            receive(name, params)
                         }
+
+                        iframeItem.iWindow.yelling = function(name, params) {
+                            yelling.call(me, name, params, window.frames[cfg.id])
+                        }
+
                         loadCallback.call(me, iframeItem)
 
                         callbackCount++
@@ -44,8 +60,6 @@
                         }
                     })
                 }
-
-                $("#" + cfg.id).attr("src", cfg.src)
             })
         }
 
@@ -114,24 +128,23 @@
             return result
         }
 
-        var reveivers = []
-        this.receive = function(name, processor) {
-            reveivers.push(_buildReceiver(name, processor))
+        var listeners = []
+        this.listen = function(name, processor) {
+            listeners.push(_buildListener(name, processor))
         }
 
+        function yelling(name, params, iframeItem) {
+            var listener = _getListener(name)
 
-        function broadcast(name, params, iframeItem) {
-            var receiver = _getReceiver(name)
-
-            if (!receiver) {
-                console.log("广播没有被任何接收器收听: " + name)
+            if (!listener) {
+                console.log("叫喊没有被听到: " + name)
                 return
             }
 
-            receiver.processor.call(this, params, iframeItem)
+            listener.processor.call(this, params, iframeItem)
         }
 
-        function _buildReceiver(name, processor) {
+        function _buildListener(name, processor) {
             return {
                 name: name,
                 processor: processor
@@ -139,15 +152,63 @@
         }
 
 
-        function _getReceiver(name) {
+        function _getListener(name) {
             var result
 
-            $.each(reveivers, function(index, receiver) {
-                if (receiver.name === name) {
-                    result = receiver
+            $.each(listeners, function(index, listener) {
+                if (listener.name === name) {
+                    result = listener
                     return false
                 }
             })
+
+            return result
+        }
+
+
+        var receivers = []
+        this.broadcast = function(name, params, targetIFrame) {
+            var receivers = _getReceivers(name, targetIFrame)
+
+            if (!receivers) {
+                console.log("广播没有被任何接收器收听: " + name)
+                return
+            }
+
+            receivers.forEach(function(processor) {
+                processor(params)
+            }, this);
+        }
+
+        function _getReceivers(name, targetIFrame) {
+            var result = []
+
+            if (targetIFrame) {
+                var iframeItem
+                if (typeof(targetIFrame) === "string") {
+                    iframeItem = _buildIFrameItem(targetIFrame)
+                } else if (targetIFrame.iWindow) {
+                    iframeItem = targetIFrame
+                } else if (_getWindow(targetIFrame)) {
+                    iframeItem = {
+                        original: targetIFrame,
+                        iWindow: _getWindow(targetIFrame),
+                        iDocument: _getDocument(targetIFrame)
+                    }
+                }
+
+                if (iframeItem && iframeItem.iWindow.receivers && iframeItem.iWindow.receivers[name]) {
+                    result.push(iframeItem.iWindow.receivers[name])
+                }
+            } else {
+                $.each(iframeConfigs, function(index, cfg) {
+                    var iframeItem = _buildIFrameItem(cfg.id)
+
+                    if (iframeItem.iWindow.receivers && iframeItem.iWindow.receivers[name]) {
+                        result.push(iframeItem.iWindow.receivers[name])
+                    }
+                })
+            }
 
             return result
         }
